@@ -1,0 +1,14 @@
+[project]
+name = "python-voice-chat"
+version = "0.1.0"
+description = "Voice chat interview system with STT and LLM"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi[standard]>=0.115.0",
+    "uvicorn>=0.32.0",
+    "faster-whisper>=1.0.0",
+    "anthropic>=0.39.0",
+    "python-dotenv>=1.0.0",
+    "python-multipart>=0.0.12",
+]

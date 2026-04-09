@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Interview</title>
+    <link rel="stylesheet" type="text/css" href="/assets/style.css" />
+</head>
+
+<body>
+    <div class="container">
+        <h1>Voice Interview</h1>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div id="startScreen">
+            <div class="question-section">
+                <p class="question-text" style="text-align: center;">
+                    Welcome! Click the button below to start your interview.
+                </p>
+            </div>
+            <div style="text-align: center;">
+                <button class="start-button" onclick="startInterview()">Start Interview</button>
+            </div>
+        </div>
+
+        <div id="interviewScreen" style="display: none;">
+            <div class="question-section">
+                <div class="question-label">Question <span id="questionNumber">1</span> of <span
+                        id="totalQuestions">5</span></div>
+                <div class="question-text" id="questionText"></div>
+            </div>
+
+            <div class="response-section" id="responseSection">
+                <div class="response-text" id="responseText"></div>
+                <div class="transcription" id="transcriptionText"></div>
+            </div>
+
+            <div class="error" id="errorMessage"></div>
+
+            <div class="controls">
+                <div style="text-align: center;">
+                    <button class="record-button" id="recordButton" onclick="toggleRecording()">🎤</button>
+                    <div class="status" id="status">Click to speak</div>
+                    <div class="volume-meter" id="volumeMeter" style="margin: 10px auto; display: none;">
+                        <div class="volume-level" id="volumeLevel"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="complete-message" id="completeMessage">
+            <h2>Interview Complete!</h2>
+            <p>Thank you for participating. Generating your evaluation...</p>
+            <div id="summarySection" style="display:none;">
+                <h3>Your Evaluation</h3>
+                <div class="summary-text" id="summaryText"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/assets/script.js"></script>
+</body>
+
+</html>

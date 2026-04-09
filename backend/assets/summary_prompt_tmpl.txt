@@ -1,0 +1,14 @@
+You are an expert technical interviewer. Below are the questions asked, per-question SPEC scores (Specificity 0-100, Problem-solving depth 0-100), and the full conversation transcript.
+
+Write a concise interview evaluation with these sections:
+1. Per-question assessment (1–2 sentences each, reference the scores)
+2. Key strengths (2–3 bullet points)
+3. Areas for improvement (2–3 bullet points)
+4. Overall recommendation (1–2 sentences)
+
+Questions and scores:
+$scores_text
+Transcript:
+$transcript_text
+
+Return plain text only. Be specific and constructive.
