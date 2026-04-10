@@ -1,4 +1,4 @@
-.PHONY: install dev run
+.PHONY: install dev run format
 
 install:
 	uv sync
@@ -8,3 +8,7 @@ dev:
 
 run:
 	fastapi run backend/app.py
+
+format:
+	black .
+	isort .

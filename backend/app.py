@@ -1,22 +1,22 @@
 import json
 import os
 import re
-from string import Template
 import tempfile
 import uuid
 from pathlib import Path
+from string import Template
 from typing import Annotated
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
+from anthropic import Anthropic
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from faster_whisper import WhisperModel
-from anthropic import Anthropic
 
 app = FastAPI()
 
@@ -33,7 +33,9 @@ whisper_model = WhisperModel("base", device="cpu", compute_type="int8")
 anthropic_client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
 _questions_file = Path(__file__).parent / "assets" / "questions.json"
-interview_questions: list[str] = json.loads(_questions_file.read_text())["questions"]
+interview_questions: list[str] = json.loads(_questions_file.read_text())[
+    "questions"
+]
 
 _prompt_template_file = Template(
     (Path(__file__).parent / "assets" / "prompt_tmpl.txt").read_text()
@@ -106,7 +108,9 @@ def analyze_response_with_claude(
         messages=messages,
     )
 
-    response_text = next(block.text for block in response.content if block.type == "text")
+    response_text = next(
+        block.text for block in response.content if block.type == "text"
+    )
 
     try:
         parsed = parse_turn_json(response_text)
@@ -164,7 +168,9 @@ def generate_summary(conversation: dict) -> str:
         messages=[{"role": "user", "content": prompt}],
     )
 
-    summary = next(block.text for block in response.content if block.type == "text")
+    summary = next(
+        block.text for block in response.content if block.type == "text"
+    )
     conversation["summary"] = summary
     return summary
 
@@ -185,15 +191,19 @@ async def process_answer(
     conversation = conversations[session_id]
 
     if conversation["done"]:
-        return JSONResponse({
-            "response": "The interview is complete. Thank you!",
-            "questionIndex": len(interview_questions),
-            "done": True,
-            "sessionId": session_id,
-        })
+        return JSONResponse(
+            {
+                "response": "The interview is complete. Thank you!",
+                "questionIndex": len(interview_questions),
+                "done": True,
+                "sessionId": session_id,
+            }
+        )
 
     try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as temp_audio:
+        with tempfile.NamedTemporaryFile(
+            delete=False, suffix=".webm"
+        ) as temp_audio:
             content = await audio.read()
             temp_audio.write(content)
             temp_audio_path = temp_audio.name
@@ -203,15 +213,19 @@ async def process_answer(
         os.unlink(temp_audio_path)
 
         if not transcription:
-            raise HTTPException(status_code=400, detail="Could not transcribe audio")
+            raise HTTPException(
+                status_code=400, detail="Could not transcribe audio"
+            )
 
         question_index = conversation["question_index"]
         current_question = interview_questions[question_index]
 
-        conversation["history"].append({
-            "role": "user",
-            "content": transcription,
-        })
+        conversation["history"].append(
+            {
+                "role": "user",
+                "content": transcription,
+            }
+        )
 
         result = analyze_response_with_claude(
             current_question,
@@ -222,18 +236,22 @@ async def process_answer(
         )
 
         if result.get("scores") is not None:
-            conversation["scores"].append({
-                "question_index": question_index,
-                "attempt": conversation["attempt"],
-                "S": result["scores"].get("S"),
-                "P": result["scores"].get("P"),
-                "weakest": result.get("weakest"),
-            })
+            conversation["scores"].append(
+                {
+                    "question_index": question_index,
+                    "attempt": conversation["attempt"],
+                    "S": result["scores"].get("S"),
+                    "P": result["scores"].get("P"),
+                    "weakest": result.get("weakest"),
+                }
+            )
 
-        conversation["history"].append({
-            "role": "assistant",
-            "content": result["response"],
-        })
+        conversation["history"].append(
+            {
+                "role": "assistant",
+                "content": result["response"],
+            }
+        )
 
         if result["completed"]:
             conversation["question_index"] += 1
@@ -241,34 +259,41 @@ async def process_answer(
 
             if conversation["question_index"] >= len(interview_questions):
                 conversation["done"] = True
-                return JSONResponse({
-                    "response": result["response"] + "\n\nThat completes our interview. Thank you for your time!",
-                    "questionIndex": conversation["question_index"],
-                    "done": True,
-                    "sessionId": session_id,
-                    "transcription": transcription,
-                })
+                return JSONResponse(
+                    {
+                        "response": result["response"]
+                        + "\n\nThat completes our interview. Thank you for your time!",
+                        "questionIndex": conversation["question_index"],
+                        "done": True,
+                        "sessionId": session_id,
+                        "transcription": transcription,
+                    }
+                )
 
             next_question = interview_questions[conversation["question_index"]]
-            
-            return JSONResponse({
+
+            return JSONResponse(
+                {
+                    "response": result["response"],
+                    "nextQuestion": next_question,
+                    "questionIndex": conversation["question_index"],
+                    "done": False,
+                    "sessionId": session_id,
+                    "transcription": transcription,
+                }
+            )
+
+        conversation["attempt"] += 1
+
+        return JSONResponse(
+            {
                 "response": result["response"],
-                "nextQuestion": next_question,
-                "questionIndex": conversation["question_index"],
+                "questionIndex": question_index,
                 "done": False,
                 "sessionId": session_id,
                 "transcription": transcription,
-            })
-
-        conversation["attempt"] += 1
-        
-        return JSONResponse({
-            "response": result["response"],
-            "questionIndex": question_index,
-            "done": False,
-            "sessionId": session_id,
-            "transcription": transcription,
-        })
+            }
+        )
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -287,12 +312,14 @@ async def start_interview():
         "scores": [],
     }
 
-    return JSONResponse({
-        "sessionId": session_id,
-        "question": interview_questions[0],
-        "questionIndex": 0,
-        "totalQuestions": len(interview_questions),
-    })
+    return JSONResponse(
+        {
+            "sessionId": session_id,
+            "question": interview_questions[0],
+            "questionIndex": 0,
+            "totalQuestions": len(interview_questions),
+        }
+    )
 
 
 @app.get("/api/summary")
@@ -303,7 +330,9 @@ async def get_summary(session_id: str):
 
     conversation = conversations[session_id]
     if not conversation["done"]:
-        raise HTTPException(status_code=400, detail="Interview not yet complete")
+        raise HTTPException(
+            status_code=400, detail="Interview not yet complete"
+        )
 
     summary = generate_summary(conversation)
     return JSONResponse({"summary": summary})
@@ -311,4 +340,8 @@ async def get_summary(session_id: str):
 
 frontend_path = Path(__file__).parent.parent / "frontend"
 if frontend_path.exists():
-    app.mount("/", StaticFiles(directory=str(frontend_path), html=True), name="frontend")
+    app.mount(
+        "/",
+        StaticFiles(directory=str(frontend_path), html=True),
+        name="frontend",
+    )
